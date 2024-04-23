@@ -52,7 +52,8 @@ add_action( 'woocommerce_email_order_meta', 'inject_tracking_info_into_email', 1
 
 // Add a menu item in the WordPress admin dashboard
 function add_shipping_companies_page() {
-    add_menu_page(
+    add_submenu_page(
+        'woocommerce',
         'Shipping Companies',
         'Shipping Companies',
         'manage_options',
@@ -169,7 +170,7 @@ function shipping_companies_page_content() {
                     <tr>
                         <td><?php echo esc_html($company_data['name']); ?></td>
                         <td><?php echo esc_html($company_data['url_template']); ?></td>
-                        <td><?php echo $company_data['is_default'] ? '<img style="width:20px;height:20px;" src="' . esc_url( $star_image_url ) . '" alt="Default">' : ''; ?></td>
+                        <td style="text-align: center"><?php echo $company_data['is_default'] ? '<img style="width:15px;height:15px;" src="' . esc_url( $star_image_url ) . '" alt="Default">' : ''; ?></td>
                         <td>
                             <?php if (!$company_data['is_default']) : ?>
                                 <a href="<?php echo esc_url(add_query_arg('set_default_shipping_company', $company_id)); ?>">Set as Default</a> | 
