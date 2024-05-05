@@ -2,7 +2,7 @@
 /*
 Plugin Name: WooCommerce Order Tracking Manager
 Description: A free WooCommerce plugin to manage shipping companies and notify users with tracking information.
-Version: 1.0
+Version: 1.1.1
 Author: Richard Avenia
 */
 
@@ -11,7 +11,7 @@ function save_tracking_number_field( $order_id ) {
     $order = wc_get_order( $order_id );
     if ( ! empty( $_POST['tracking_number'] ) ) {
         $order->update_meta_data( '_tracking_number', sanitize_text_field( $_POST['tracking_number'] ) );
-		$order->update_meta_data( '_shipping_company', sanitize_text_field( $_POST['shipping_company'] ) );
+		$order->update_meta_data( 'shipping_company', sanitize_text_field( $_POST['shipping_company'] ) );
 		if ( isset( $_POST['complete_order'] ) && $order->get_status() == 'processing' ) {
 			$_POST['order_status'] = 'completed';
 			$order->update_status( 'completed' );
@@ -27,7 +27,7 @@ function inject_tracking_info_into_email( $order, $sent_to_admin, $plain_text, $
     if ( ! $sent_to_admin && 'customer_completed_order' === $email->id ) {
         // Retrieve tracking number and shipping company ID from order
         $tracking_number = $order->get_meta( '_tracking_number', true );
-        $shipping_company_id = $order->get_meta( '_shipping_company', true );
+        $shipping_company_id = $order->get_meta( 'shipping_company', true );
 
         // Retrieve shipping companies from options
         $shipping_companies = get_option('shipping_companies', array());
@@ -66,7 +66,9 @@ add_action('admin_menu', 'add_shipping_companies_page');
 
 // Content for the custom admin page
 function add_tracking_number_field( $order ) {
+    $order_local = wc_get_order( $order->get_id() );
 	$shipping_companies = get_option('shipping_companies', array());
+    $order_shipping_company = $order_local->get_meta('shipping_company', true);
     ?>
     <div class="shipping_information">
 		<h4><?php _e( 'Tracking Information', 'your-text-domain' ); ?></h4>
@@ -77,9 +79,22 @@ function add_tracking_number_field( $order ) {
 		<p class="form-field">
 			<label for="shipping_provider"><?php _e( 'Shipping Provider', 'your-text-domain' ); ?></label>
 			<select name="shipping_company" id="shipping_company">
-				<?php foreach ($shipping_companies as $company_id => $company_data) : ?>
-					<option <?php echo $company_data['is_default'] ? 'selected' : ''; ?> value="<?php echo esc_html($company_id); ?>"><?php echo esc_html($company_data['name']); ?></option>
-                <?php endforeach; ?>
+            <?php foreach ($shipping_companies as $company_id => $company_data) : ?>
+                <?php
+                $selected = '';
+                // Check if shipping_company meta is set for the current order
+                if ($order_shipping_company) {
+                    // If it's set, check if the current company_id matches the meta value
+                    if ($company_id === $order_shipping_company) {
+                        $selected = 'selected';
+                    }
+                } else {
+                    // If shipping_company meta is not set, use the logic for fallback on default company
+                    $selected = $company_data['is_default'] ? 'selected' : '';
+                }
+                ?>
+                <option <?php echo $selected; ?> value="<?php echo esc_html($company_id); ?>"><?php echo esc_html($company_data['name']); ?></option>
+            <?php endforeach; ?>
             </select>
 		</p>
 		<p class="form-field">
